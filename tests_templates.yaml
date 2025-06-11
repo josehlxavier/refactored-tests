@@ -1,0 +1,112 @@
+tests:
+  - plan: "payments_test-plan_v4"
+    module: "payments_api_account-type_test-module_v4"
+    description: "Ensure accountType SLRY com no longer be requested, and authorisationFlow can be sent as HYBRID_FLOW"
+    steps:
+      - type: request
+        name: "Criar consentimento"
+        request:
+          method: POST
+          path: "/consents"
+          headers: #Cabecalhos obrigatórios
+            Content-Type: "application/jwt"
+            Authorization: "Bearer {{access_token}}"
+            x-fapi-interaction-id: "{{interaction_id}}"
+            x-idempotency-key: "{{idempotency_key}}"
+          body: #Campos com validação necessária
+            data:
+              debtorAccount:
+                accountType: "SLRY"
+
+      - type: assert
+        name: "Validar erro na criação do consentimento"
+        assert:
+          status: 422
+          body:
+            errors:
+              code: "PARAMETRO_INVALIDO"
+      
+      - type: request
+        name: "Criar consentimento com fluxo de autorização HYBRID_FLOW"
+        request:
+          method: POST
+          path: "/consents"
+          headers: #Cabecalhos obrigatórios
+            Content-Type: "application/jwt"
+            Authorization: "Bearer {{access_token}}"
+            x-fapi-interaction-id: "{{interaction_id}}"
+            x-idempotency-key: "{{idempotency_key}}"
+          body: #Campos com validação necessária
+            data:
+              debtorAccount:
+                accountType: "SVGS|CACC|TRAN"
+      
+      - type: assert
+        name: "Validar sucesso na criação do consentimento com fluxo de autorização HYBRID_FLOW"
+        assert:
+          status: 201
+          body:
+            data:
+              authorisationFlow: "HYBRID_FLOW"
+              status: "AWAITING_AUTHORISATION"
+      
+      - type: request
+        name: "Redirecionar o usuário para o fluxo de autorização do consentimento"
+        request:
+          method: GET
+          path: "/redirect_url"
+
+      - type: request
+        name: "Consultar consentimento após redirecionamento"
+        request:
+          method: GET
+          path: "/consents/{consentId}"
+          headers: #Cabecalhos obrigatórios
+            Authorization:  "Bearer {{access_token}}"
+            x-fapi-interaction-id: "{{interaction_id}}"
+
+      - type: assert
+        name: "Validar estado do consentimento após redirecionamento"
+        assert:
+          body:
+            data:
+              status: "AUTHORISED"
+      
+      - type: request
+        name: "Criar pagamento com fluxo de autorização HYBRID_FLOW"
+        request:
+          method: POST
+          path: "/pix/payments"
+          headers: #Cabecalhos obrigatórios
+            Content-Type: "application/jwt"
+            Authorization: "Bearer {{access_token}}"
+            x-fapi-interaction-id: "{{interaction_id}}"
+            x-idempotency-key: "{{idempotency_key}}"
+          body: #Campos com validação necessária
+            data:
+              debtorAccount:
+                authorisationFlow: "HYBRID_FLOW"
+      
+      - type: assert
+        name: "Validar sucesso na criação do pagamento com fluxo de autorização HYBRID_FLOW"
+        assert:
+          status: 201
+          body:
+            data:
+              status: "RCVD|ACCP|ACPD"
+      
+      - type: request
+        name: "Consultar pagamento após criação"
+        request:
+          method: GET
+          path: "/pix/payments/{paymentId}"
+          headers: #Cabecalhos obrigatórios
+            Authorization: "Bearer {{access_token}}"
+            x-fapi-interaction-id: "{{interaction_id}}"
+
+      - type: assert
+        name: "Validar estado do pagamento após criação"
+        assert:
+          body:
+            data:
+              status: "ACSC"
