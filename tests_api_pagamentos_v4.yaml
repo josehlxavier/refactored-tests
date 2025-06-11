@@ -1,0 +1,2619 @@
+tests:
+- plan: dcr-dcm-pagto_test-plan-v4
+  module: dcr_api_dcm-pagto-remove-webhook_test-module-v4
+  description: Ensure that the tested institution accepts a DCM request to remove
+    the webhook notification endpoint. This test also ensures that a webhook is retried
+    after a failure message is sent. For this test the institution will need to register
+    on it’s software statement a webhook under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the Registration Endpoint, also sending the field "webhook_uris":[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;”]
+  - type: assert
+    name: Expect a 201 - Validate Response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument set as DICT
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as DICT
+    request:
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Set the payments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/pix/payments/{paymentId}
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Set the payments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/consents/{consentsId}
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: assert
+    name: Expect an incoming message, for at most 60 seconds,which must be mtls protected,
+      to be received on the webhook endpoint set for this test
+  - type: assert
+    name: Return a 503 - Validate the contents of the incoming message, including
+      the presence of the x-webhook-interaction-id header and that the timestamp value
+      is within  now and the start of the test
+  - type: assert
+    name: Expect an incoming message, for at most 60 seconds, which must be mtls protected,
+      to be received on the webhook endpoint set for this test
+  - type: assert
+    name: Return a 202 - Validate the contents of the incoming message, including
+      the presence of the x-webhook-interaction-id header and that the timestamp value
+      is within  now and the start of the test
+  - type: request
+    name: Call the Get Payments endpoint with the PaymentID
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects status returned to be (ACSC) - Validate Response
+  - type: request
+    name: Call the PUT Registration Endpoint without sending the field "webhook_uris"
+    request:
+      method: PUT
+      path: /Registration
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument set as DICT
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as DICT
+    request:
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Validate that no webhook is called on the payments webhook endpoints
+  - type: request
+    name: Call the Delete Registration Endpoint
+    request:
+      method: DELETE
+      path: /Registration
+  - type: assert
+    name: Expect a 204 - No Content
+    assert:
+      httpStatus: 204
+- plan: dcr-dcm-pagto_test-plan-v4
+  module: dcr_api_dcm-pagto-webhook-acsc_test-module-v4
+  description: Ensure that the tested institution has correctly implemented the webhook
+    notification endpoint and that this endpoint is correctly called when a payment
+    status is updated.  For this test the institution will need to register on it’s
+    software statement a webhook under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the Registration Endpoint, also sending the field "webhook_uris":[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;”]
+  - type: assert
+    name: Expect a 201 - Validate Response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Set the consents webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/consents/{consentId},
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument set as DICT
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as DICT
+    request:
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Set the payments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/pix/payments/{paymentId}
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: assert
+    name: Expect an incoming message, one for each defined endoint, payments and consents,
+      both which  must be mtls protected and can be received on any endpoint at any
+      order - Wait 60 seconds for both messages to be returned
+  - type: request
+    name: For both webhook calls - Return a 202 - Validate the contents of the incoming
+      message, including the presence of the x-webhook-interaction-id header and that
+      the timestamp value is within  now and the start of the test
+  - type: request
+    name: Call the Get Payments endpoint with the PaymentID
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects status returned to be (ACSC) - Validate Response
+  - type: request
+    name: Call the Delete Registration Endpoint
+    request:
+      method: DELETE
+      path: /Registration
+  - type: assert
+    name: Expect a 204 - No Content
+    assert:
+      httpStatus: 204
+- plan: dcr-dcm-pagto_test-plan-v4
+  module: dcr_api_dcm-pagto-webhook-schd_test-module-v4
+  description: Ensure that the tested institution has correctly implemented the webhook
+    notification endpoint and that this endpoint is correctly called when a scheduled
+    payment changes to a schd state .  For this test the institution will need to
+    register on it’s software statement a webhook under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the Registration Endpoint, also sending the field "webhook_uris":[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;”]
+  - type: assert
+    name: Expect a 201 - Validate Response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Set the consents webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/consents/{consentId},
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument set as DICT and set the
+      payment.schedule.single.date to D+1
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as DICT
+    request:
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Set the payments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/pix/payments/{paymentId}
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: assert
+    name: Expect an incoming message, one for each defined endoint, payments and consents,
+      both which  must be mtls protected and can be received on any endpoint at any
+      order - Wait 60 seconds for both messages to be returned
+  - type: request
+    name: For both webhook calls - Return a 202 - Validate the contents of the incoming
+      message, including the presence of the x-webhook-interaction-id header and that
+      the timestamp value is within  now and the start of the test
+  - type: request
+    name: Call the Get Payments endpoint with the PaymentID
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects status returned to be (SCHD) - Validate Response
+  - type: request
+    name: Call the Patch Payments endpoint with the PaymentID
+    request:
+      method: PATCH
+      path: /Payments
+  - type: request
+    name: Expect an incoming message for the payments webhook endpoint - Wait at most
+      60 seconds for the endpoint to be called
+  - type: assert
+    name: Return a 202 - Validate the contents of the incoming message, including
+      the presence of the x-webhook-interaction-id header and that the timestamp value
+      is within  now and the start of the test
+  - type: request
+    name: Call the Get Payments endpoint with the PaymentID
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects status returned to be (CANC) - Validate Response
+- plan: dcr-dcm-pagto_test-plan-v4
+  module: dcr_api_dcm-pagto-webhook_test-module-v4
+  description: Ensure that the tested institution is able to correctly accept the
+    request of a webhook notification endpoint when its done during the DCM and that
+    this endpoint is correctly called when a payment status is updated.  For this
+    test the institution will need to register on it’s software statement a webhook
+    under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the Registration Endpoint without sending the “webhook_uris” field.
+  - type: assert
+    name: Expect a 201 - Ensure that the “webhook_uris” is not returned on the response
+      body
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Call the PUT Registration Endpoint sending the field "webhook_uris":[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;”]
+    request:
+      method: PUT
+      path: /Registration
+  - type: assert
+    name: Expect a 201 - Validate Response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Set the consents webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/consents/{consentId},
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument set as DICT
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as DICT
+    request:
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Set the payments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1/payments/v4/pix/payments/{paymentId}
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: assert
+    name: Expect an incoming message, one for each defined endoint, payments and consents,
+      both which  must be mtls protected and can be received on any endpoint at any
+      order - Wait 60 seconds for both messages to be returned
+  - type: request
+    name: For both webhook calls - Return a 202 - Validate the contents of the incoming
+      message, including the presence of the x-webhook-interaction-id header and that
+      the timestamp value is within  now and the start of the test
+  - type: request
+    name: Call the Get Payments endpoint with the PaymentID
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects status returned to be (ACSC) - Validate Response
+  - type: request
+    name: Call the Delete Registration Endpoint
+    request:
+      method: DELETE
+      path: /Registration
+  - type: assert
+    name: Expect a 204 - No Content
+    assert:
+      httpStatus: 204
+- plan: dcr-dcm-pagto_test-plan-v4
+  module: dcr_api_dcm-pagto-wrong-webhook_test-module-v4
+  description: Ensure that the tested institution validates the field webhook_uris
+    matches the software_api_webhook_uris on the SSA and correctly returns an error
+    if this is not working as expected.  For this test the institution will need to
+    register on it’s software statement a webhook under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the Registration Endpoint, but send the field "webhook_uris" equal
+      to:[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/&lt;alias&gt;/open-banking/webhook/v1”]
+  - type: assert
+    name: Expect a 400 error - Validate institution returns error field as “invalid_webhook_uris”
+    assert:
+      httpStatus: 400
+- plan: payments_test-plan_v4
+  module: payments_api_account-type_test-module_v4
+  description: Ensure accountType SLRY com no longer be requested, and authorisationFlow
+    can be sent as HYBRID_FLOW
+  steps:
+  - type: request
+    name: Call the POST Consent with accountType as SLRY on debtorAccount
+  - type: assert
+    name: Expects 422 PARAMETRO_INVALIDO  - Validate error message
+  - type: request
+    name: Call the POST Consent with accountType as CACC/SVGS/TRAN on debtorAccount,
+      depending on what was provided on the test configuration
+  - type: assert
+    name: Expets 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with authorisationFlow as HYBRID_FLOW
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Definitive state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_canc-temporization-conditional_test-module_v4
+  description: This test module is optional and should be executed only by institutions
+    that wish to test the different flows for a payment that will fall into a PNDG
+    state, meaning it was halted for additional verification. The test will only be
+    executed if the "Payment consent - Logged User CPF - Temporization" is provided
+    on the test configuration. The test modules validates is a CANC state is reached
+    when the payment is deleted while at PDNG status
+  steps:
+  - type: assert
+    name: Validates if the user has provided the field “Payment consent - Logged User
+      CPF - Temporization”. If field is not provided the whole test scenario must
+      be SKIPPED
+  - type: request
+    name: Set the payload to be customer business if Payment consent - Business Entity
+      CNPJ - Temporization was provided. If left blank, it should be customer personal
+  - type: request
+    name: Creates consent request_body with valid email proxy specific for this test
+      (cliente-a00002@pix.bcb.gov.br), localInstrument as DICT, Payment consent -
+      Logged User CPF - Temporization” on the loggedUser identification field, Value
+      as 12445,67, and IBGE Town Code as 1400704 (Uiramutã), Debtor account should
+      not be sent
+    request:
+      body:
+        localInstrument: DICT
+  - type: request
+    name: Call the POST Consents API
+  - type: assert
+    name: Expects 201 - Validate that the response_body is in line with the specifications
+  - type: assert
+    name: Redirects the user to authorize the created consent - Expect Successful
+      Authorization
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects a 201 with status set as either PNDG or RCVD - Validate response_body
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Poll the Get Payments endpoint
+  - type: assert
+    name: End Polling when payment response returns a PNDG status
+  - type: request
+    name: Call the PATCH Payments Endpoint
+    request:
+      method: PATCH
+      path: /Payments
+  - type: assert
+    name: Expect a 200 to be returned
+    assert:
+      httpStatus: 200
+  - type: request
+    name: Call the Get Payments endpoint
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expect 200 on Canceled State (CANC) - Confirm that cancellation.cancelledFrom:"INICIADORA"
+      and cancellation.reason:"CANCELADO_PENDENCIA"
+- plan: payments_test-plan_v4
+  module: payments_api_consents_negative_test-module_v4
+  description: Ensure an error status is sent on the POST Payments API in  different
+    inconsistent scenarios
+  steps:
+  - type: request
+    name: Ensure error when Payment Type is "BAD" Calls POST Consents Endpoint with
+      payment type as "BAD" Expects 422 PARAMETRO_INVALIDO - validate error message
+      2. Ensure error when an invalid person type is sent Calls POST Consents Endpoint
+      with person type as "INVALID" Expects 422 PARAMETRO_INVALIDO - Validate error
+      message 3. Ensure error when invalid currency is sent Calls POST Consents Endpoint
+      with currency as "XXX" Expects 422 PARAMETRO_INVALIDO  - Validate error message
+      4. Ensure error when invalid date is sent Calls POST Consents Endpoint with
+      past date value Expects 422 DATA_PAGAMENTO_INVALIDA - Validate error message
+      5. Ensure x-fapi-interaction-id is validated, and sent back when not requested
+      Calls POST consents Endpoint with the x-fapi-interaction-id as "123456" Expects
+      400 or 422 PARAMETRO_INVALIDO - Validate Error message, ensure a valid x-fapi-interaction-id
+      is sent on the response and its a UUID as RFC4122 6. Ensure POST Consents is
+      successful when valid payload is sent Calls POST Consents Endpoint with valid
+      payload, using DICT as the localInstrument Expects 201 - Validate response and
+      ensure x-fapi-interaction-id is the same as the one sent Redirects the user
+      to authorize the created consent- Call GET Consent Expects 200 - Validate if
+      status is "AUTHORISED"
+    request:
+      method: POST
+      path: /Consents
+- plan: payments_test-plan_v4
+  module: payments_api_consents_rejection-reason_test-module_v4
+  description: Ensure the correct rejectionReason is returned whe the consent is rejected
+    in different scenarios 1. Ensure consent is rejected when the same account is
+    sent on creditor and debtor account
+  steps:
+  - type: request
+    name: Call POST consent with the same info on creditorAccount and debtorAccount
+    request:
+      body:
+        debtorAccount: null
+        creditorAccount: null
+  - type: request
+    name: Call the POST Consents endpoints using token issued via client_credentials
+      grant
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 DETALHE_PAGAMENTO_INVALIDO - Validate Error Message
+  - type: request
+    name: 'If no errors are found:'
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "REJECTED" and rejectionReason is CONTAS_ORIGEM_DESTINO_IGUAIS
+      2. Ensure consent is rejected when the user rejects it manually
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to reject the consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "REJECTED" and rejectionReason is REJEITADO_USUARIO
+      3. Ensure consent is rejected when the authorization time expires. This step
+      will take 5 minutes to run.
+  - type: request
+    name: Call POST consent with the expirationDateTime as creationDateTime + 5 minutes
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Set the conformance suite to wait 5 minutes
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "REJECTED" and rejectionReason is TEMPO_EXPIRADO_AUTORIZACAO
+- plan: payments_test-plan_v4
+  module: payments_api_consumed-consent_test-module_v4
+  description: 1. Ensure an error is sent when consent is reused at a failed payment
+    flow
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload, using DICT as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AWAITING_AUTHORISATION"
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint without the EndtoEndId field
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 PARAMETRO_NAO_INFORMADO
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "CONSUMED"
+  - type: request
+    name: Calls the POST Payments with the EndtoEndId field
+  - type: assert
+    name: Expects 422 CONSENTIMENTO_INVALIDO - Validate error message 2. Ensure an
+      error is sent when consent is reused at a success payment flow
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload, using DICT as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate if status is "AWAITING_AUTHORISATION"
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with valid payload
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "CONSUMED"
+  - type: request
+    name: Calls the POST Payments with the same consent and payload, but different
+      idempotency key
+  - type: assert
+    name: Expects 422 CONSENTIMENTO_INVALIDO - Validate error message
+- plan: payments_test-plan_v4
+  module: payments_api_contenttype-jwt-refreshtoken_test-module_v4
+  description: This test is a PIX Payments current date test that aims to test both
+    the refresh token rotation expected behavior and also how the instituion must
+    handles the accept header when it's not sent as application/jwt
+  steps:
+  - type: request
+    name: Call POST token endpoint using client-credentials grant, however request
+      the scopes="payments" and "openid"
+    request:
+      method: POST
+      path: /token
+  - type: assert
+    name: Expect 201 - Created - Make sure token has been issued with only payments
+      scope, ignoring the openid additional scope, and returning the scope optional
+      object in line with https://www.rfc-editor.org/rfc/rfc6749#section-3.3
+  - type: request
+    name: Create consent with valid e-mail payload, localInstrument to be set to DICT
+  - type: request
+    name: 'Call the POST Consents endpoints, set header "accept": "*/*"'
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Make sure a JWT is returned - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Call the POST token endpoint with refresh token grant
+    request:
+      method: POST
+      path: /token
+  - type: assert
+    name: Expect a new access token to be generated - Make sure the refresh token
+      hasn’t been rotated
+  - type: request
+    name: 'Call the POST Payments Endpoint with the token obtained from the refresh
+      token grant, set header "accept": "*/*"'
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Make sure a JWT is returned - Validate response
+  - type: request
+    name: 'Call the GET Payments endpoint with token issued with client_credentials
+      grant, set header "accept": "*/*"'
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects either a 200 - make sure response is JWT
+  - type: request
+    name: 'Call the GET Payments endpoint with token issued with client_credentials
+      grant, set header "accept": "application/json"'
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects either a 200 or a 406 response - If 200 make sure response is JWT
+  - type: request
+    name: 'Call the GET Consents endpoint with token issued with client_credentials
+      grant, set header "accept": "*/*"'
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects either a 200 - make sure response is JWT - Make sure that the self
+      link returned is exactly equal to the requested URI
+  - type: request
+    name: 'Call the GET Consents endpoint with token issued with client_credentials
+      grant, set header "accept": "application/json"'
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects either a 200 or a 406 response - If 200 make sure response is JWT
+- plan: payments_test-plan_v4
+  module: payments_api_dict-pix-response_test-module_v4
+  description: Ensure response are valid when localInstrument is DICT
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument as DICT
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as DICT
+    request:
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Definitive  state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_dict_test-module_v4
+  description: Ensure error when localInstrument is DICT and QRCode is sent (Ref Error
+    2.2.2.8)
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument as DICT and QRCode on
+      the payload
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: DICT
+  - type: assert
+    name: Expects 422 DETALHE_PAGAMENTO_INVALIDO - Validate Error Message
+- plan: payments_test-plan_v4
+  module: payments_api_e2eid_test-module_v4
+  description: Validate that the server is correctly validating if a correct E2EID
+    field is being sent before accepting the PIX Payments requests
+  steps:
+  - type: request
+    name: Call the POST Consent API with DICT initiation type using a valid e-mail
+      proxy key
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirect the user to authorize the Consent
+  - type: request
+    name: Call GET Consent, with the same idempotency id used at POST Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST  Payments  without sending an E2EID
+  - type: assert
+    name: Expects  400 in JSON or a 422 JWT. For a 422 returned code must be set to
+      "PARAMETRO_NAO_INFORMADO"
+  - type: request
+    name: Call the POST Consents API
+  - type: request
+    name: Redirect the user to authorize the Consent
+  - type: request
+    name: Calls the POST  Payments API with a bad E2EID which sets the month field
+      to 13
+  - type: assert
+    name: Expects a  400 in JSON or a 422 JWT. For a 422 returned code must be set
+      to "PARAMETRO_INVALIDO"
+  - type: request
+    name: Call the POST Consents API
+  - type: request
+    name: Redirect the user to authorize the Consent
+  - type: request
+    name: Calls the POST  Payments API with a valid E2EID
+  - type: assert
+    name: Expects a success 201
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expectes Definitive  state (ACSC) with matching E2EID- Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_fake-email-proxy_test-module_v4
+  description: Ensure error when invalid  email is sent as proxy
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with invalid email as proxy, using DICT as
+      the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201- Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with invalid email as proxy
+  - type: assert
+    name: 'Expects 201 or 422 DETALHE_PAGAMENTO_INVALIDO or PAGAMENTO_RECUSADO_DETENTORA  If
+      201 is returned:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects 200 with a RJCT status, and rejectionReason as DETALHE_PAGAMENTO_INVALIDO
+      or PAGAMENTO_RECUSADO_DETENTORA
+- plan: payments_test-plan_v4
+  module: payments_api_force-check-signature_test-module_v4
+  description: Ensure error when sending consent endpoint request with a bad signature
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint random times with valid signature
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Calls POST Consents Endpoint with badly signed request
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 400 - Validate error message
+- plan: payments_test-plan_v4
+  module: payments_api_idempotency_test-module_v4
+  description: Ensure Error when payment request is sent with reused invalid iss and
+    idempotency key
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent, with the same idempotency id used at POST Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Call the POST Payments with an invalid iss
+  - type: assert
+    name: Expect 403 - Validate Error Message
+  - type: request
+    name: Calls the POST Payments, with the same idempotency key used at POST Consent
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Call the POST Payments with the same idempotency key but a different payload
+  - type: assert
+    name: Expect 422 ERRO_IDEMPOTENCIA - Validate Error Message
+  - type: request
+    name: Call the POST Payments, with the same payload as the previous request but
+      a different idempotency id
+  - type: assert
+    name: Expects 422 - CONSENTIMENTO_INVALIDO
+- plan: payments_test-plan_v4
+  module: payments_api_incorrect-cpf-proxy_test-module_v4
+  description: Ensure error when invalid CPF is sent on the proxy
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with invalid CPF at the proxy, using DICT as
+      the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201- Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments invalid proxy, as CPF account
+  - type: assert
+    name: Expects 201 or 422 DETALHE_PAGAMENTO_INVALIDO or PAGAMENTO_RECUSADO_DETENTORA
+  - type: assert
+    name: 'If 201 is returned:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects 200 with a RJCT status, and rejectionReason as DETALHE_PAGAMENTO_INVALIDO
+      or PAGAMENTO_RECUSADO_DETENTORA
+- plan: payments_test-plan_v4
+  module: payments_api_inic-pix-response_test-module_v4
+  description: Ensure response are valid when localInstrument is INIC
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument as INIC
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: INIC
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"n
+  - type: request
+    name: Calls the POST Payments with localInstrument as INIC, with a transactionIdentifier
+      on the payload
+    request:
+      body:
+        localInstrument: INIC
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expectes Definitive  state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_invalid-token_test-module_v4
+  description: This test is a PIX Payments that aims to test if the institution accepts
+    the correct type of Token for each different API method
+  steps:
+  - type: request
+    name: Create consent with request payload with both the schedule.single.date field
+      set as D+1
+  - type: request
+    name: Call the POST Consents endpoints using token issued via client_credentials
+      grant
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent using token issued via client_credentials grant
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate the response
+  - type: request
+    name: Call the POST Payments Endpoint with a token issued via using token issued
+      via client_credentials grant
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expect either a 401 to be returned
+  - type: request
+    name: Call the POST Payments Endpoint  using a token issued via authorization_code
+      grant
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Call the GET Payments endpoint using a token issued via authorization_code
+      grant
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expect either a 401 to be returned
+  - type: request
+    name: Call the PATCH Payments endpoint using a token issued via authorization_code
+      grant
+    request:
+      method: PATCH
+      path: /Payments
+  - type: assert
+    name: Expect either a 401 to be returned
+  - type: request
+    name: Call the POST Consents endpoint using a token issued via authorization_code
+      grant
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expect either a 401 to be returned
+- plan: payments_test-plan_v4
+  module: payments_api_json-accept-header-jwt-returned_test-module_v4
+  description: Ensure a JWT is returned when a JSON accept header is sent
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Calls GET Consents Endpoint  with a JSON accept header
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects 200 or 406
+  - type: assert
+    name: If a 200 is returned, ensure it is a JWT
+- plan: payments_test-plan_v4
+  module: payments_api_jti-reuse_test-module_v4
+  description: Ensure error when reusing a Json Token Identifier
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Calls GET Consents Endpoint with valid payload
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects 200 - Validate Response
+  - type: request
+    name: Calls POST Consents Endpoint reusing the jti claim
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 403 - Validate error message
+- plan: payments_test-plan_v4
+  module: payments_api_manu-fail_test-module_v4
+  description: Ensure error if a proxy or qrcode is sent when localInstrument is MANU
+    (Ref Error 2.2.2.8)
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument as MANU and QRCode with
+      email on the payload
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: MANU
+  - type: assert
+    name: Expects 422 DETALHE_PAGAMENTO_INVALIDO - validate error message
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument as MANU and proxy with
+      email  on the payload
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: MANU
+  - type: assert
+    name: Expects 422 DETALHE_PAGAMENTO_INVALIDO - validate error message
+- plan: payments_test-plan_v4
+  module: payments_api_manu-pix-response_test-module_v4
+  description: Ensure response are valid when localInstrument is MANU
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with localInstrument as MANU, and no proxy
+      or qrcode provided
+    request:
+      method: POST
+      path: /Consents
+      body:
+        localInstrument: MANU
+  - type: assert
+    name: Expects 201
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with localInstrument as MANU
+    request:
+      body:
+        localInstrument: MANU
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expectes Definitive  state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_multiple-consents-conditional_test-module_v4
+  description: This test module should be executed only by institutions that currently
+    support consents with multiple accounts, in case the institution does not support
+    this feature the ‘Payment consent - Logged User CPF - Multiple Consents Test'
+    and 'Payment consent - Business Entity CNPJ - Multiple Consents Test’  should
+    be left empty, which in turn will make the test return a SKIPPED  This test module
+    validates that the payment will reach an ACSC state after multiple consents are
+    granted
+  steps:
+  - type: assert
+    name: Validates if the user has provided the field "Payment consent - Logged User
+      CPF - Multiple Consents Test". If field is not provided the whole test scenario
+      must be SKIPPED
+  - type: request
+    name: Set the payload to be customer business if Payment consent - Business Entity
+      CNPJ - Multiple Consents Test was provided. If left blank, it should be customer
+      personal
+  - type: request
+    name: Creates consent request_body with valid email proxy (cliente-a00001@pix.bcb.gov.br)
+      and its standardized payload, set the 'Payment consent - Logged User CPF - Multiple
+      Consents Test' on the loggedUser identification field, Debtor account should
+      not be sent
+  - type: request
+    name: Call the POST Consents API
+  - type: assert
+    name: Expects 201 - Validate that the response_body is in line with the specifications
+  - type: assert
+    name: Redirects the user to authorize the created consent - Expect Successful
+      Authorization
+  - type: request
+    name: Calls the GET Consents Endpoint
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects 200 - Check the status is “PARTIALLY_ACCEPTED” and validate the
+      response
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 - CONSENTIMENTO_PENDENTE_AUTORIZACAO
+  - type: request
+    name: Poll the GET Consents endpoint for 10 minutes with the ConsentID created
+      while consent is "PARTIALLY_ACCEPTED"
+  - type: request
+    name: Call the POST Payment Endpoint
+    request:
+      method: POST
+      path: /Payment
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: request
+    name: Call the GET Payments Endpoint
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expected Accepted state (ACSC) - Validate the Response
+- plan: payments_test-plan_v4
+  module: payments_api_multiple-consents-no-funds-conditional_test-module_v4
+  description: This test module should be executed only by institutions that currently
+    support consents with multiple accounts, in case the institution does not support
+    this feature the ‘Payment consent - Logged User CPF - Multiple Consents Test'
+    and 'Payment consent - Business Entity CNPJ - Multiple Consents Test’ should be
+    left empty, which in turn will make the test return a SKIPPED This test module
+    validates that the payment will reach a RJCT for payments without limit
+  steps:
+  - type: assert
+    name: Validates if the user has provided the field “Payment consent - Logged User
+      CPF - Multiple Consents Test”. If field is not provided the whole test scenario
+      must be SKIPPED
+  - type: request
+    name: Set the payload to be customer business if Payment consent - Business Entity
+      CNPJ - Multiple Consents Test was provided. If left blank, it should be customer
+      personal
+  - type: request
+    name: Creates consent request_body with valid email proxy (cliente-a00001@pix.bcb.gov.br)
+      and its standardized payload, set the Payment consent - Logged User CPF - Multiple
+      Consents Test” on the loggedUser identification field, and  the amount to be
+      9999999999.99, Debtor account should not be sent
+  - type: request
+    name: Call the POST Consents API
+  - type: assert
+    name: Expects 201 - Validate that the response_body is in line with the specifications
+  - type: assert
+    name: Redirects the user to authorize the created consent - Expect Failure
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call the GET Consents API
+  - type: assert
+    name: Expects 200 - Validate response - Check if Status is REJECTED and rejectionReason
+      is SALDO_INSUFICIENTE or VALOR_ACIMA_LIMITE
+- plan: payments_test-plan_v4
+  module: payments_api_negative_test-module_v4
+  description: Ensure an error status in sent on different inconsistent scenarios
+    (Reference Error 2.2.2.5/2.2.2.6) 1. Ensure error when currency is different between
+    consents and payment
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload, using DICT as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Error
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint with a different currency
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: assert
+    name: Validate error message
+  - type: request
+    name: 'If no errors are found:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Definitive state (RJCT) with rejectionReason as PAGAMENTO_DIVERGENTE_CONSENTIMENTO  2.
+      Ensure error when the amount is different between consent and payment
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload, using DICT as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint with different amount
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: assert
+    name: Validate error message
+  - type: request
+    name: 'If no errors are found:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: request
+    name: Expects Definitive state (RJCT) with rejectionReason as PAGAMENTO_DIVERGENTE_CONSENTIMENTO  3.
+      Ensure POST payments can only be called with authorization code flow
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Calls the POST Payments Endpoint with client_credentials token
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 401
+  - type: request
+    name: Validate error message  4. Ensure POST payment is successful when valid
+      payload is sent
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload, using DICT as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201
+  - type: request
+    name: Redirects the user to authorize the consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint with valid payload
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Definitive  state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_no-debtor-account_test-module_v4
+  description: Ensure the user is asked to select a debtor account when not provided
+    in the request.
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with no debtor account information, using DICT
+      as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments
+  - type: assert
+    name: Expects 201 - Validate message
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expectes Definitive  state (ACSC) - Validate Response A screenshot should
+      be uploaded showing the user is presented with an option to select an account.
+- plan: payments_test-plan_v4
+  module: payments_api_nofunds_test-module_v4
+  description: Ensure a payment with an amount of 9999999999.99 will lead to a RJCT
+    Payment with SALDO_INSUFICIENTE or VALOR_ACIMA_LIMITE error
+  steps:
+  - type: request
+    name: Creates consent request_body with valid email proxy (cliente-a00001@pix.bcb.gov.br)
+      and it’s standardized payload, however set the amount to be 9999999999.99
+  - type: request
+    name: Call the POST Consents API
+  - type: assert
+    name: Expects 201 - Validate that the response_body is in line with the specifications
+  - type: assert
+    name: Redirects the user to authorize the created consent - Expect Failure
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call the GET Consents API
+  - type: assert
+    name: Expects 200 - Validate response - Check if Status is REJECTED and rejectionReason
+      is SALDO_INSUFICIENTE or VALOR_ACIMA_LIMITE
+- plan: payments_test-plan_v4
+  module: payments_api_phone-number-proxy_test-module_v4
+  description: Ensure paymets flow is sucessful when a valid phone number proxy is
+    sent
+  steps:
+  - type: request
+    name: Calls POST Consents Endpoint with valid phone number as proxy, using DICT
+      as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expectes Definitive  state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_pixscheduling-dates-unhappy_test-module_v4
+  description: 5 Negative Test Scenarios that change the payment date and schedule.single.date
+    fields and expect errors on the POST Consents request
+  steps:
+  - type: request
+    name: Attempts to create a payment consent scheduled with the date element present
+      together with schedule.single.date, and expects a 422 response with the error
+      DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Create consent with request payload with both the date and the schedule.single.date
+      fields
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 with error DATA_PAGAMENTO_INVALIDA - Validate Error response
+  - type: assert
+    name: Attempts to create a payment consent scheduled for today, and expects a
+      422 response with the error DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Create consent with request payload set with schedule.single.date field
+      defined as today
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 with error  DATA_PAGAMENTO_INVALIDA - Validate Error response
+  - type: assert
+    name: Attempts to create a payment consent scheduled for a day in the past, with
+      a payment date of yesterday, and expects a 422 response with the error DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Create consent with request payload set with schedule.single.date field
+      defined as yesterday D-1
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 with error DATA_PAGAMENTO_INVALIDA  - Validate Error response
+  - type: assert
+    name: Attempts to create a payment consent scheduled for a day too far in the
+      future, with a payment date of today + 740 days, and expects a 422 response
+      with the error DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Create consent with request payload set with schedule.single.date field
+      defined as yesterday D+740
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 with error DATA_PAGAMENTO_INVALIDA  - Validate Error response
+  - type: assert
+    name: Attempts to create a payment consent wihtout the date or date scheduled
+      fields, both which are optional, expecting error PARAMETRO_NAO_INFORMADO
+  - type: request
+    name: Create consent with request payload set without the date field provided
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 with error PARAMETRO_NAO_INFORMADO  - Validate Error response
+- plan: payments_test-plan_v4
+  module: payments_api_pixscheduling-endtoend-unhappy_test-module_v4
+  description: This test is scheduled payments test, which will break the defined
+    rules for the EndToEndID field, which should be sent with a time on the day of
+    the payment and an hour value equal to 15 UTC
+  steps:
+  - type: request
+    name: Create consent with request payload with both the  schedule.single.date
+      field set as D+1
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with E2EID set for future date but with
+      hour as 01 instead of 15
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 - with error PARAMETRO_INVALIDO -  Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_pixscheduling-patch-detentora_test-module_v4
+  description: PATCH Payments happy path test that will require the tester to revoke
+    the scheduled Payment on the Financial Instituion application, leading the scheduled
+    payment to have a cancelation object set as DETENTORA
+  steps:
+  - type: request
+    name: Create consent with request payload with both the  schedule.single.date
+      field set as D+1
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Call the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: assert
+    name: Expect Payment Scheduled to be reached (SCHD) - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is SCHD for up to 10 minutes - Wait for the payment to reach a CANC state
+  - type: assert
+    name: Expect 200 - Make Sure cancellation.cancelledFrom is set as "DETENTORA".
+      Make Sure cancellation.reason is set as "CANCELADO_AGENDAMENTO" - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_pixscheduling-patch-iniciadora_test-module_v4
+  description: PATCH Payments happy path test that will revoke a scheduled payment
+    with cancelation object set as INICIADORA
+  steps:
+  - type: request
+    name: Create consent with request payload with both the schedule.single.date field
+      set as D+1
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Call the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: assert
+    name: Expect Payment Scheduled to be reached (SCHD) - Validate Response
+  - type: request
+    name: Call the PATCH Payments Endpoint - cancelledBy must match the loggedUser
+      object
+    request:
+      method: PATCH
+      path: /Payments
+  - type: assert
+    name: Expect 200 - Make Sure cancellation.cancelledFrom is set as "INICIADORA".
+      Make Sure cancellation.reason is set as "CANCELADO_AGENDAMENTO" - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_pixscheduling-patch-unhappy_test-module_v4
+  description: 1. PATCH Payments unhappy path test that will revoke a scheduled payment
+    with invalid request_body
+  steps:
+  - type: request
+    name: Create consent with request payload with the schedule.single.date field
+      set as D+1
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Call the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: assert
+    name: Expect Payment Scheduled to be reached (SCHD) - Validate Response
+  - type: request
+    name: Call the PATCH Payments Endpoint - cancelledBy must have the same document
+      as the loggedUser however the field rel will be set to "XXX"
+    request:
+      method: PATCH
+      path: /Payments
+  - type: request
+    name: Expect 422 with error set as PAGAMENTO_NAO_PERMITE_CANCELAMENTO  2. Ensure
+      error when PATCH payments endpoint is called in a state different from SCHD/PDNG/PATC
+  - type: request
+    name: Calls POST Consents Endpoint with valid payload, using DICT as the localInstrument
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201
+  - type: request
+    name: Calls the PATCH Payments Endpoint
+    request:
+      method: PATCH
+      path: /Payments
+  - type: assert
+    name: Expects 422 - PAGAMENTO_NAO_PERMITE_CANCELAMENTO
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Definitive state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_pixscheduling-schd-accepted_test-module_v4
+  description: This test is the core happy path scheduled payments test, creating
+    a scheduled payment and waiting for this payment to reach a SCHD state. The test
+    will require the user to provide a screen capture showing the scheduled date on
+    it's screen.
+  steps:
+  - type: request
+    name: Create consent with request payload with both the  schedule.single.date
+      field set as D+350
+  - type: request
+    name: Call the POST Consents endpoints
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: User must upload a screen capture showing the payment screen with scheduled
+      date for +350 days
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: assert
+    name: Expect Payment Scheduled to be reached (SCHD) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_preflight_test-module_v4
+  description: Pre-flight checks will validate the consentUrl along with the loggedUser
+    and debtorAccount, the mTLS certificate before requesting an access token using
+    the Directory client_id provided in the test configuration. Then, an SSA will
+    be generated using the Open Banking Brasil Directory. Finally, it will verify
+    if the consent version on configuration is set to v4.
+  steps: []
+- plan: payments_test-plan_v4
+  module: payments_api_qres-code-enforcement_test-module_v4
+  description: Ensure a QR code is required when the local instrument is QRES
+  steps:
+  - type: request
+    name: Create consent with “localInstrument” as QRES, but no “qrcode” in the payload
+  - type: assert
+    name: Expects 422 PARAMETRO_NAO_INFORMADO
+  - type: assert
+    name: Validate Error response
+- plan: payments_test-plan_v4
+  module: payments_api_qres-good-email-proxy_test-module_v4
+  description: Ensure payment reaches an accepted state when a valid email proxy key
+    is sent, using a static QRCODE
+  steps:
+  - type: request
+    name: Call POST consent with valid email proxy (cliente-a00001@pix.bcb.gov.br)
+      and QRES
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Accepted state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_qres-good-phone-number-proxy_test-module_v4
+  description: Ensure payment reaches an accepted state when a valid phone number
+    proxy key is sent, using a static QRCODE
+  steps:
+  - type: request
+    name: Call POST consent with valid phone number as proxy and QRES
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Accepted state (ACSC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_qres-mismatched-consent-payment_test-module_v4
+  description: Ensure payment fails when the payment QR code differs from the consented
+    one (Reference Error 2.2.2.6)
+  steps:
+  - type: request
+    name: Call POST Consent with valid QRES
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint with a different city on the qrcode
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: assert
+    name: Validate Error message
+  - type: request
+    name: 'If no errors are found:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Definitive  state (RJCT) with rejectionReason as PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+- plan: payments_test-plan_v4
+  module: payments_api_qres-mismatched-proxy_test-module_v4
+  description: Ensure that consent fails when the PIX key sent on the Static QR Code
+    differs from proxy key sent (Reference Error 2.2.2.8)
+  steps:
+  - type: request
+    name: Call POST Consent with different Pix Key on QRES and proxy key on the payload
+  - type: assert
+    name: Expects 422 - DETALHE_PAGAMENTO_INVALIDO
+  - type: assert
+    name: 'Validate Error message If no errors are identified:'
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "REJECTED" and rejectionReason is QRCODE_INVALIDO
+- plan: payments_test-plan_v4
+  module: payments_api_qres-with-transaction-identifier_test-module_v4
+  description: Ensures that a payment consent created with a QRES and a transaction
+    identifier is rejected
+  steps:
+  - type: request
+    name: Call POST Consents with localInstrument as QRES
+    request:
+      body:
+        localInstrument: QRES
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Call POST Payment Endpoint with a transactionIdentification
+    request:
+      method: POST
+      path: /Payment
+  - type: assert
+    name: Expects 422 DETALHE_PAGAMENTO_INVALIDO
+  - type: assert
+    name: 'Validate Error Message If no errors are identified:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects a payment with the definitive state (RJCT) status and RejectionReason
+      equal to DETALHE_PAGAMENTO_INVALIDO
+  - type: assert
+    name: Validate Error message
+- plan: payments_test-plan_v4
+  module: payments_api_qres-wrong-amount-proxy_test-module_v4
+  description: Ensure that consent fails when the amount sent on the Static QR Code
+    differs from the payload (Reference Error 4.1.3)
+  steps:
+  - type: request
+    name: Call POST Consent with different amount values on QRES and the payload
+  - type: assert
+    name: Expects 422 - DETALHE_PAGAMENTO_INVALIDO
+  - type: assert
+    name: 'Validate Error message If no errors are identified:'
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "REJECTED" and rejectionReason is  VALOR_INVALIDO
+- plan: payments_test-plan_v4
+  module: payments_api_real-email-invalid-creditor-proxy_test-module_v4
+  description: Calls POST Consents Endpoint with invalid creditor account, using DICT
+    as the localInstrument
+  steps:
+  - type: assert
+    name: Expects 201- Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments  invalid creditor account
+  - type: assert
+    name: 'Expects 201 or 422 DETALHE_PAGAMENTO_INVALIDO or PAGAMENTO_RECUSADO_DETENTORA
+      If 201 is returned:'
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects 200 with a RJCT status, and rejectionReason as DETALHE_PAGAMENTO_INVALIDO
+      or PAGAMENTO_RECUSADO_DETENTORA
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-consent-limit_test-module_v4
+  description: Ensure that consent for recurring payments cannot be created if it
+    exceeds the consent limit rules
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+672 and schedule.daily.quantity as 60
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.weekly.dayOfWeek field
+      set as SEGUNDA_FEIRA, schedule.weekly.startDate field set as D+317 and schedule.weekly.quantity
+      as 60
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.monthly.dayOfMonth field
+      set as 01, schedule.monthly.startDate field set as D+150 and schedule.monthly.quantity
+      as 20
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.custom.dates field set
+      as D+100 and D+732
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - DATA_PAGAMENTO_INVALIDA
+  - type: request
+    name: Call the POST Consents endpoints with 2 identical items at schedule.custom.dates
+      field, set as D+1 and D+1
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - PARAMETRO_INVALIDO
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+10 and schedule.daily.quantity as 61
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - PARAMETRO_INVALIDO
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.weekly.dayOfWeek field
+      set as SEGUNDA_FEIRA, schedule.weekly.startDate field set as D+10 and schedule.weekly.quantity
+      as 61
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - PARAMETRO_INVALIDO
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-custom-core_test-module_v4
+  description: Ensure that consent for custom recurring payments can be carried out
+    and that the payment is successfully scheduled
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.custom.dates field set
+      as D+1, D+7, D+32, D+129 and D+500
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the appropriate
+      endToEndId for each of them
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the last PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-daily-core_test-module_v4
+  description: Ensure that consent for daily recurring payments can be carried out
+    and that the payment is successfully schedulled
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+1, and schedule.daily.quantity as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the apprpriate
+      endtoendID for each of them
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the last PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-higher-quantity_test-module_v4
+  description: Ensure that consent for recurring payments can be carried out and that
+    the payment is not successfully scheduled when its the quantity of payments sent
+    is higher what is on the consent
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+1, and schedule.daily.quantity as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with 6 Payments, using the apprpriate endtoendID
+      for each of them, ensuring the day for the first payment is the next day 01
+      and not the startDate, and adding one more daily payment in sequence
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 - PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “CONSUMED” and validate response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-invalid-e2eid-startDate_test-module_v4
+  description: Ensure that consent for monthly recurring payments can be carried out
+    and that the payment is not successfully scheduled when the e2eid does not match
+    the consent. This test cannot be executed on a Sunday.
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.weekly.dayOfWeek field
+      set as SEGUNDA_FEIRA, schedule.weekly.startDate field set as D+1, and schedule.weekly.quantity
+      as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is ““AUTHORISED”” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the apprpriate
+      wth the e2eid starting from D+1 with a week gap with each other, and not the
+      correct expected date
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 - PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is ““CONSUMED”” and validate respons
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-large-batch_test-module_v4
+  description: Ensure that consent for recurring payments can be carried out and that
+    the payment is successfully scheduled when a large batch of payments is sent
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+1, and schedule.daily.quantity as 60
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 60 Payments, using the appropriate
+      endToEndID for each of them
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the last PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-lower-quantity_test-module_v4
+  description: Ensure that consent for recurring payments can be carried out and that
+    the payment is not successfully scheduled when its the quantity of payments sent
+    is below what is on the consent
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.custom.dates field set
+      as D+1, D+7, D+32, D+129 and D+500
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is ““AUTHORISED”” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with only 4 Payments, using the apprpriate
+      endtoendID for each of them, ensuring the day for the first payment is the next
+      day 01 and not the startDate, and skipping the last one
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 - PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “CONSUMED” and validate response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-monthly-core_test-module_v4
+  description: Ensure that consent for monthly recurring payments can be carried out
+    and that the payment is successfully scheduled even when its due date is the 31st,
+    and the dates are adjusted accordingly
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.monthly.dayOfWeek field
+      set as 31, schedule.monthly.startDate field set as D+1, and schedule.monthly.quantity
+      as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the apprpriate
+      endtoendID for each of them, ensuring the day for the first payment is the next
+      day 31 and not the startDate. Additionally, when dealing with months that do
+      not have a 31st, send the date as the next day, which is the 1st of the next
+      month.
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the last PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-patch_test-module_v4
+  description: Ensure that the PATCH endpoints can successfully cancel payments, depending
+    on the type of cancellation being executed
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+1, and schedule.daily.quantity as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the appropriate
+      endToEndId for each of them
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the last PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+  - type: request
+    name: Call the PATCH PaymentId Endpoint with the first PaymentID
+    request:
+      method: PATCH
+      path: /PaymentId
+  - type: assert
+    name: Expect 200 - Check if status is CANC, and cancellation reason is CANCELADO_AGENDAMENTO.
+      Check if cancelledFrom is INICIADORA
+  - type: request
+    name: Call the GET Payments for the 4 Payments left
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+  - type: request
+    name: Call the PATCH ConsentId Endpoint
+    request:
+      method: PATCH
+      path: /ConsentId
+  - type: assert
+    name: Expect 200 - Check if the list has the 4 paymentIds left, and the statusUpdateDateTime
+      is after the time of the request
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Cancelled in all of them (CANC) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-unhappy-date-adjustment_test-module_v4
+  description: Ensure that consent for monthly recurring payments can be carried out
+    and that the payment is not successfully scheduled when its due date is the 31st,
+    and the dates are not adjusted accordingly
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.monthly.dayOfMonth field
+      set as 31, schedule.monthly.startDate field set as D+1, and schedule.monthly.quantity
+      as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the appropriate
+      endToEndId for each of them, ensuring the day for the first payment is the next
+      day 31 and not the startDate. When dealing with months that do not have a 31st,
+      send the date as the previous day.
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 422 - PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "CONSUMED" and validate response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-wrong-amount_test-module_v4
+  description: Ensure that consent for monthly recurring payments can be carried out
+    and that the payment is not successfully scheduled when the amount from one of
+    the payments does not match the consent.
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.daily.startDate field
+      set as D+1, and schedule.daily.quantity as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED" and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the appropriate
+      wth the e2eid but onf of the payments with a different amount
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: 'Expects 201 or 422 - PAGAMENTO_DIVERGENTE_CONSENTIMENTO If 201 is returned:'
+  - type: request
+    name: Poll the Get Payments endpoint with one of the PaymentID Created while payment
+      status is RCVD
+  - type: assert
+    name: Expects 200 with a RJCT status, and rejectionReason as PAGAMENTO_DIVERGENTE_CONSENTIMENTO
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "CONSUMED" and validate response
+- plan: payments_test-plan_v4
+  module: payments_api_recurring-payments-wrong-custom-quantity_test-module_v4
+  description: Ensure that consent for custom recurring payments can't be carried
+    out is the number of payments is lower than permitted
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with 1 item at schedule.custom.dates field
+      set as D+1
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 422 - PARAMETRO_INVALIDO
+- plan: payments_test-plan_v4
+  module: payments_api_recurring_payments_weekly_test-module_v4
+  description: Ensure that consent for weekly recurring payments can be carried out
+    and that the payment is successfully scheduled
+  steps:
+  - type: request
+    name: Call the POST Consents endpoints with the schedule.weekly.dayOfWeek field
+      set as SEGUNDA_FEIRA, schedule.weekly.startDate field set as D+1, and schedule.weekly.quantity
+      as 5
+    request:
+      method: POST
+      path: /Consents
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is “AUTHORISED” and validate response
+  - type: request
+    name: Calls the POST Payments Endpoint with the 5 Payments, using the apprpriate
+      endtoendID for each of them, ensuring the day for the first payment is the next
+      SEGUNDA_FEIRA, and not the startDate
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the last PaymentID Created while payment
+      status is RCVD or ACCP
+  - type: request
+    name: Call the GET Payments for the 5 Payments
+  - type: assert
+    name: Expect Payment Scheduled in all of them (SCHD) - Validate Response
+- plan: payments_test-plan_v4
+  module: payments_api_temporization-conditional_test-module_v4
+  description: This test module is optional and should be executed only by institutions
+    that wish to test the different flows for a payment that will fall into a PNDG
+    state, meaning it was halted for additional verification. The test will only be
+    executed if the "Payment consent - Logged User CPF - Temporization Test" is provided
+    on the test configuration.  The test modules validate if the payment will reach
+    a final state is reached after a PDNG status
+  steps:
+  - type: assert
+    name: Validates if the user has provided the field “Payment consent - Logged User
+      CPF - Temporization”. If field is not provided the whole test scenario must
+      be SKIPPED
+  - type: request
+    name: Set the payload to be customer business if Payment consent - Business Entity
+      CNPJ - Temporization was provided. If left blank, it should be customer personal
+  - type: request
+    name: Creates consent request_body with valid email proxy specific for this test
+      (cliente-a00002@pix.bcb.gov.br), localInstrument as DICT, Payment consent -
+      Logged User CPF - Temporization” on the loggedUser identification field, Value
+      as 12345,67, and IBGE Town Code as 1400704 (Uiramutã), Debtor account should
+      not be sent
+    request:
+      body:
+        localInstrument: DICT
+  - type: request
+    name: Call the POST Consents API
+  - type: assert
+    name: Expects 201 - Validate that the response_body is in line with the specifications
+  - type: assert
+    name: Redirects the user to authorize the created consent - Expect Successful
+      Authorization
+  - type: request
+    name: Calls the POST Payments Endpoint
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects a 201 with status set as either PNDG or RCVD - Validate response_body
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Poll the Get Payments endpoint - End Polling when payment response returns
+      a PNDG status
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is PNDG – Wait for user to provide approval
+  - type: assert
+    name: 'Expect 200 with either:'
+  - type: assert
+    name: Rejected State (RJCT) - Confirm that RejectionReason equal to NAO_INFORMADO
+      is returned
+  - type: request
+    name: Accepted State (ACSC)
+- plan: payments_test-plan_v4
+  module: payments_api_x-fapi_test-module_v4
+  description: Ensure x-fapi-interaction-id is being required at payments endpoints
+    1 - Validate the Behaviour on the POST/GET Payments-Consents Endpoints · Call
+    the POST Consents endpoint without the x-fapi-interaction-id · Expects 400 - Validate
+    Error message, ensure a x-fapi-interaction-id is sent on the response · Call the
+    POST Consents endpoint with the x-fapi-interaction-id, set date to be of a scheduled
+    payment (D+1) · Expects 201 - Validate response, ensure x-fapi-interaction-id
+    is the same one sent back · Call GET Consent without the x-fapi-interaction-id
+    · Expects 400 - Validate Error message, ensure a x-fapi-interaction-id is sent
+    on the response · Call GET Consent with the x-fapi-interaction-id · Expects 200
+    - Validate if status is "AWAITING_AUTHORISATION" · Redirect the use to authorize
+    the Consent' 2 - Validate the Behaviour on the POST/GET Pix-Payments Endpoints  ·
+    Call the POST Payments without the x-fapi-interaction-id · Expects 400 - Validate
+    Error message, ensure a x-fapi-interaction-id is sent on the response · Call the
+    POST Payments with the x-fapi-interaction-id · Expects 201 - Validate response,
+    ensure x-fapi-interaction-id is the same one sent back · Call GET Payments without
+    the x-fapi-interaction-id · Expects 400 - Validate Error message, ensure a x-fapi-interaction-id
+    is sent on the response · Call GET Payments with the x-fapi-interaction-id · Expects
+    200 - Validate response, ensure x-fapi-interaction-id is the same one sent back
+    3 - Validate the Behaviour on the PATCH Pix-Payments Endpoints · Call the PATCH
+    Payments without the x-fapi-interaction-id · Expects 400 - Validate Error message,
+    ensure a x-fapi-interaction-id is sent on the response · Call PATCH Payments with
+    the x-fapi-interaction-id · Expects 200 - Validate response, ensure x-fapi-interaction-id
+    is the same one sent back
+  steps: []
+- plan: payments-qrdn_test-plan_v4
+  module: payments_api_qrdn-code-enforcement_test-module_v4
+  description: Ensure a QR code is required when the local instrument is QRDN
+  steps:
+  - type: request
+    name: Create consent with “localInstrument” as QRDN, but no “qrcode” in the payload
+  - type: assert
+    name: Expects 422 PARAMETRO_NAO_INFORMADO
+  - type: assert
+    name: Validate Error response
+- plan: payments-qrdn_test-plan_v4
+  module: payments_api_qrdn-good-proxy_test-module_v4
+  description: Ensures payment reaches an accepted state when a valid QRDN is sent.
+    Additionally, checks if POST consent is Rejected when QRDN is reused. The Dynamic
+    QRCode must be created by the organisation by using the PIX Tester environment
+    and all the creditor details must be aligned with what is supplied on the config
+    fields.
+  steps:
+  - type: request
+    name: Call POST Consents with user provided QRDN
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint - Send the CNPJ Initiator provided by the
+      user and Create the E2EID using the CNPJ Initiator
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP, or ACPD (Validate only the first call)
+  - type: assert
+    name: Expects Accepted state (ACSC) - Validate Response
+  - type: request
+    name: Call POST Consent with the same QRDN
+  - type: assert
+    name: Expects 422 - DETALHE_PAGAMENTO_INVALIDO
+  - type: assert
+    name: 'Validate Error message If no errors are identified:'
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "REJECTED" and rejectionReason is  QRCODE_INVALIDO
+- plan: payments-qrdn_test-plan_v4
+  module: payments_api_qrdn-with-qres-code_test-module_v4
+  description: Ensure that payment fails when the localInstrument is QRDN but the
+    qrcode is a QRES  (Reference Error 2.2.2.8)
+  steps:
+  - type: request
+    name: Call POST Consent with localInstrument as QRDN but the “qrcode” field with
+      a valid static QRcode
+    request:
+      body:
+        localInstrument: QRDN
+  - type: assert
+    name: Expects 422 - DETALHE_PAGAMENTO_INVALIDO
+  - type: assert
+    name: 'Validate Error message If no errors are identified:'
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: assert
+    name: Ensure an error is returned and that the authorization code was not sent
+      back
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if Status is REJECTED and rejectionReason is QRCODE_INVALIDO
+- plan: payments-timezone_test-plan_v4
+  module: payments_api_multiple-consents-timezone-conditional_test-module_v4
+  description: This test module should be executed only by institutions that currently
+    support consents with multiple accounts, in case the institution does not support
+    this feature the ‘Payment consent - Logged User CPF - Multiple Consents Test'
+    and 'Payment consent - Business Entity CNPJ - Multiple Consents Test’  should
+    be left empty, which in turn will make the test return a SKIPPED  This test module
+    will evaluate if the consent for multiple consents is rejected when not approved
+    by the end of the day.
+  steps:
+  - type: assert
+    name: Validates if the user has provided the field "Payment consent - Logged User
+      CPF - Multiple Consents Test". If field is not provided the whole test scenario
+      must be SKIPPED
+  - type: request
+    name: Set the payload to be customer business if Payment consent - Business Entity
+      CNPJ - Multiple Consents Test was provided. If left blank, it should be customer
+      personal
+  - type: request
+    name: Creates consent request_body with valid email proxy (cliente-a00001@pix.bcb.gov.br)
+      and its standardized payload, set the 'Payment consent - Logged User CPF - Multiple
+      Consents Test' on the loggedUser identification field, Debtor account should
+      not be sent
+  - type: request
+    name: Call the POST Consents API, sending the schedule.single.date as D+1
+  - type: assert
+    name: Expects 201 - Validate that the response_body is in line with the specifications
+  - type: assert
+    name: Redirects the user to authorize the created consent - Expect Successful
+      Authorization
+  - type: request
+    name: Calls the GET Consents Endpoint
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects 200 - Check the status is “PARTIALLY_ACCEPTED” and validate the
+      response
+  - type: request
+    name: Check if localTime is between 23h30 and 23h59, if not the test should fail
+  - type: request
+    name: Set the conformance suite to sleep until 00:00
+  - type: request
+    name: Calls the GET Consents Endpoint
+    request:
+      method: GET
+      path: /Consents
+  - type: assert
+    name: Expects 200 - Validate response - Check if Status is REJECTED and rejectionReason
+      is TEMPO_EXPIRADO_AUTORIZACAO
+- plan: payments-timezone_test-plan_v4
+  module: payments_api_timezone_test-module_v4
+  description: Ensure payment reaches an accepted state when executed between 9pm
+    UTC-3 and 11:59pm UTC-3. To ensure that the server can process the the date, which
+    is set as UTC-3, this test must be executed between 9pm UTC-3 and 11:59pm UTC-3
+  steps:
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Redirects the user to authorize the created consent
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint with a valid EndToEndID
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Accepted state (ACSC) - Validate Response
+  - type: assert
+    name: Validate if the current time is set between 9pm UTC-3 and 11:59pm UTC-3
+      - Return failure if not as defined on the test summary
