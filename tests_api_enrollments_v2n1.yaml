@@ -1,0 +1,1827 @@
+tests:
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_preflight_test-module_v2
+  description: Pre-flight checks will validate the mTLS certificate before requesting
+    an access token using the Directory client_id provided in the test configuration.
+    An SSA will be generated using the Open Banking Brasil Directory. Finally a check
+    of mandatory fields will be made
+  steps: []
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_expired-postauthorisation-enrollment_test-module_v2-1
+  description: Ensure that enrollment is expired in 5 minutes when status is AWAITING_ENROLLMENT
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Set the conformance Suite to sleep for 5 minutes
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REJECTED", cancelledFrom is DETENTORA, and rejectionReason is REJEITADO_TEMPO_EXPIRADO_ENROLLMENT
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_expired-preauthorisation-enrollment_test-module_v2-1
+  description: 'Ensure that enrollment is expired in 15 minutes when status is set
+    as AWAITING_ACCOUNT_HOLDER_VALIDATION:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Set the conformance Suite to sleep for 15 minutes Call the GET enrollments
+      endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REJECTED", cancelledFrom is DETENTORA, and rejectionReason is REJEITADO_TEMPO_EXPIRADO_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_expired-prerisksignal-enrollment_test-module_v2-1
+  description: 'Ensure that enrollment is expired in 5 minutes when status is set
+    as AWAITING_RISK_SIGNALS:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Set the conformance Suite to sleep for 5 minutes
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REJECTED", cancelledFrom is DETENTORA, and rejectionReason is REJEITADO_TEMPO_EXPIRADO_RISK_SIGNALS
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-parameters_test-module_v2-1
+  description: Ensure that enrollment can't be requested if request parameters are
+    sent wrongly
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint, don't send an x-fapi-interaction-id
+      on the header
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 400 response
+    assert:
+      httpStatus: 400
+  - type: request
+    name: Call the POST enrollments endpoint, sign the message with an incorrect private
+      key
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 400 response
+    assert:
+      httpStatus: 400
+  - type: request
+    name: Call the POST enrollments endpoint without sending the issuer field, but
+      with accountType as CACC
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 422 response - Validate Code PARAMETRO_NAO_INFORMADO
+    assert:
+      httpStatus: 422
+      body:
+        errors:
+          code: PARAMETRO_NAO_INFORMADO
+  - type: request
+    name: Call the POST enrollments endpoint without sending the debtorAccount.accountType
+      field
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 422 response - With Code PARAMETRO_NAO_INFORMADO
+    assert:
+      httpStatus: 422
+      body:
+        errors:
+          code: PARAMETRO_NAO_INFORMADO
+  - type: request
+    name: Call the POST enrollments endpoint and send an invalid permission value
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 422 response - With Code PERMISSOES_INVALIDAS
+    assert:
+      httpStatus: 422
+      body:
+        errors:
+          code: PERMISSOES_INVALIDAS
+  - type: request
+    name: Call the POST enrollments endpoint sending the debtorAccount.accountType
+      field as SLRY
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 422 response - With Code PARAMETRO_INVALIDO
+    assert:
+      httpStatus: 422
+      body:
+        errors:
+          code: PARAMETRO_INVALIDO
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-public-key_test-module_v2-1
+  description: 'Ensure that enrollment can''t be successfully executed when a Invalid
+    Public key is sent:'
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 201 response - Validate the response and extract the challenge
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Call the POST fido-registration endpoint, sending the attestationObject
+      with a the credentialPublicKey as "INVALID_PUBLIC_KEY"
+    request:
+      method: POST
+      path: /fido-registration
+  - type: request
+    name: Expect 422 - PUBLIC_KEY_INVALIDA - Validate Error response Call the GET
+      enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      REJECTED
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-status-options_test-module_v2-1
+  description: 'Ensure that enrollment-options cannot be created if enrollment status
+    is AWAITING_ACCOUNT_HOLDER_VALIDATION:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Call the POST fido-registration-options endpoint with client_credentials
+      token
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect 401 - Validate Error response
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-status-sign-options_test-module_v2-1
+  description: Ensure that the fido-sign-options cannot be requested if enrollment
+    status is AWAITING_ENROLLMENT
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created Expect 422
+      STATUS_VINCULO_INVALIDO - Validate error message
+    request:
+      method: POST
+      path: /sign-options
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_payments-pre-account-holder-validation_test-module_v2-1
+  description: Ensure payment without redirect cannot be executed if Enrollment status
+    is "AWAITING_ACCOUNT_HOLDER_VALIDATION".
+  steps:
+  - type: request
+    name: Call the POST Enrollments Endpoint
+    request:
+      method: POST
+      path: /Enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Call POST consents with valid payload, sending the correct EnrollmentID
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call POST Consents Authorize With Mocked Payload on the FidoAssertion using
+      the client_credentials token
+  - type: assert
+    name: Expects 401 or 403
+  - type: request
+    name: Call the GET consents endpoint
+    request:
+      method: GET
+      path: /consents
+  - type: assert
+    name: Expects 200 - Validate if status is AWAITING_AUTHORISATION
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_payments-pre-enrollment_test-module_v2-1
+  description: Ensure payment without redirect cannot be executed if Enrollment status
+    is "AWAITING_ENROLLMENT".
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call POST Consents Authorize with a Mocked Payload on the FidoAssertion
+  - type: assert
+    name: Expects 422 - STATUS_VINCULO_INVALIDO and Validate error response
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is REJECTED, and rejectionReason is NAO_INFORMADO
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_rejected-postauthorisation-enrollment_test-module_v2-1
+  description: 'Ensure that enrollment can be successfully rejected when status is
+    AWAITING_ENROLLMENT:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the PATCH enrollments endpoint Expect a 204 response
+    request:
+      method: PATCH
+      path: /enrollments
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REJECTED", cancelledFrom is INICIADORA and rejectionReason is REJEITADO_MANUALMENTE
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 422 STATUS_VINCULO_INVALIDO or 401 - Validate error message
+    assert:
+      httpStatus: 422
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_rejected-preauthorisation-enrollment_test-module_v2-1
+  description: 'Ensure that enrollment can be successfully rejected when status is
+    AWAITING_ACCOUNT_HOLDER_VALIDATION:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Call the PATCH enrollments endpoint
+    request:
+      method: PATCH
+      path: /enrollments
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REJECTED", cancelledFrom is INICIADORA and rejectionReason is REJEITADO_MANUALMENTE
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+  - type: request
+    name: Call the POST fido-registration-options endpoint using client_credentials
+      token
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 401 - Validate error response
+    assert:
+      httpStatus: 401
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_payments-core_test-module_v2-1
+  description: Ensure payment reaches an accepted state when a payment without redirect
+    is executed. This test will also require that a indefinite term consent is set
+    at the user redirection
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED", and that the expirationDateTime is not sent back
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge
+  - type: request
+    name: Calls the POST Token endpoint with the refresh_token grant, ensuring a token
+      with the nrp-consent scope was issued
+    request:
+      method: POST
+      path: /Token
+  - type: request
+    name: Call POST consent authorize with valid payload, signing the challenge with
+      the compliant private key, and sending the x-bcb-nfc header as true
+  - type: assert
+    name: Expects 204
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint, using the access token with the nrp-consents,
+      authorisationFlow as FIDO_FLOW and consentId with the corresponding ConsentID
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Accepted state (ACSC) - Validate Response
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-origin_test-module_v2-1
+  description: 'Ensure that enrollment can''t be successfully executed when origin
+    can''t be verified:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 201 response - Validate the response and extract the challenge
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Create the a key pair fido compliant
+  - type: request
+    name: Call the POST fido-registration endpoint, sending the response.clientDataJSON.origin
+      field as "INVALID_ORIGIN"
+    request:
+      method: POST
+      path: /fido-registration
+  - type: assert
+    name: Expect 422 - ORIGEM_FIDO_INVALIDA - Validate Error response
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      REJECTED, validate if rejectionReason is REJEITADO_FALHA_FIDO
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-challenge_test-module_v2-1
+  description: 'Ensure that enrollment can''t be successfully executed when a invalid
+    challenge is sent:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 201 response - Validate the response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Create the a key pair fido compliant
+  - type: request
+    name: Call the POST fido-registration endpoint, sending the response.clientDataJSON.challenge
+      field as a random string
+    request:
+      method: POST
+      path: /fido-registration
+  - type: assert
+    name: Expect 422 - CHALLENGE_INVALIDO - Validate Error response
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      REJECTED, validate if rejectionReason is REJEITADO_FALHA_FIDO
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_core-enrollment_test-module_v2-1
+  description: 'Ensure that enrollment can be successfully executed:'
+  steps:
+  - type: request
+    name: GET a SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Call the POST enrollments endpoint sending the enrollmentName as "Vinculo
+      JSR"
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION Redirect the user to authorize the enrollment
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 201 response - Validate the response and extract the challenge
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Create the FIDO Credentials and create the attestationObject
+  - type: request
+    name: Call the POST fido-registration endpoint, sending the compliant attestationObject,
+      with the origin extracted on the SSA at the ClientDataJson.origin
+    request:
+      method: POST
+      path: /fido-registration
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AUTHORISED" and the enrollmentName as "Vinculo JSR"
+    assert:
+      httpStatus: 201
+      body:
+        status: AUTHORISED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_revoked-enrollment_test-module_v2-1
+  description: 'Ensure that enrollment can be successfully revoked after creating,
+    and a payment cannot be executed afterward:'
+  steps:
+  - type: request
+    name: GET a SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 201 response - Validate the response and extract the challenge
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Create the FIDO Credentials and create the attestationObject
+  - type: request
+    name: Call the POST fido-registration endpoint, sending the compliant attestationObject,
+      with the origin extracted on the SSA at the ClientDataJson.origin
+    request:
+      method: POST
+      path: /fido-registration
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AUTHORISED"
+    assert:
+      httpStatus: 201
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call the PATCH enrollments endpoint
+    request:
+      method: PATCH
+      path: /enrollments
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "REVOKED", cancelledFrom is INICIADORA and revocationReason is REVOGADO_MANUALMENTE
+    assert:
+      httpStatus: 201
+      body:
+        status: REVOKED
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created Expect 422
+      - STATUS_VINCULO_INVALIDO - Validate Error response
+    request:
+      method: POST
+      path: /sign-options
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_invalid-rpid_test-module_v2-1
+  description: 'Ensure that enrollment cannot be created if rp_id is invalid:'
+  steps:
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint with the rp field as "www.fakedomain.com"
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect 422 - RP_INVALIDA - Validate Error response
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      REJECTED, validate if rejectionReason is REJEITADO_FALHA_FIDO
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_payments-keys-swap_test-module_v2-1
+  description: Ensure a consent is not authorized if the message is signed with a
+    different private key
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: assert
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope ensuring the extensions are validated when sent by the server
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED"
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge, ensuring the extensions
+      are validated when sent by the Server
+  - type: request
+    name: Call POST consent authorise with valid payload, signing the challenge with
+      a private key not related to the public key registered during the enrollment
+      process
+  - type: assert
+    name: Expects 422 RISCO - Validate error response
+  - type: request
+    name: Call GET Consent Endpoint
+    request:
+      method: GET
+      path: /Consent
+  - type: assert
+    name: Expects 200 - Validate if status is REJECTED, and rejectionReason is NAO_INFORMADO
+  - type: request
+    name: Call POST consent authorise with valid payload, signing the challenge with
+      the matching compliant private key
+  - type: assert
+    name: Expects 422 STATUS_CONSENTIMENTO_INVALIDO - Validate error response
+  - type: request
+    name: Call GET Consent Endpoint
+    request:
+      method: GET
+      path: /Consent
+  - type: assert
+    name: Expects 200 - Validate if status is REJECTED, and rejectionReason is NAO_INFORMADO
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_payments-unmatching-fields_test-module_v2-1
+  description: Ensure Error when fields for the Fido Flow are not sent at the POST
+    PIX Payments Endpoints
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED"  1. Ensure payment is failed when an unmatching authorisationFlow
+      field is sent
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge
+  - type: request
+    name: Call POST consent authorize with valid payload, signing the challenge with
+      the compliant private key
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Token endpoint with the refresh_token grant, ensuring a token
+      with the nrp-consent scope was issued
+    request:
+      method: POST
+      path: /Token
+  - type: request
+    name: Calls the POST Payments Endpoint, using the access token with the nrp-consents,
+      authorisationFlow as HYBRID_FLOW and consentId with the corresponding ConsentID
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: 'Expects 201 or 422 PARAMETRO_INVALIDO - Validate Error Response If response
+      is 201:'
+  - type: request
+    name: Call the GET Payments Endpoint
+    request:
+      method: GET
+      path: /Payments
+  - type: request
+    name: Expects 200 with a RJCT status, and rejectionReason as DETALHE_PAGAMENTO_INVALIDO  2.
+      Ensure payment is failed when a consentID is not sent at the POST Pix Payments
+      Endpoint
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge
+  - type: request
+    name: Call POST consent authorize with valid payload, signing the challenge with
+      the compliant private key
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Token endpoint with the refresh_token grant, ensuring a token
+      with the nrp-consent scope was issued
+    request:
+      method: POST
+      path: /Token
+  - type: request
+    name: Calls the POST Payments Endpoint, using the access token with the nrp-consents,
+      authorisationFlow as FIDO_FLOW and without sending the consentId field
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: 'Expects 201 or 422 PARAMETRO_NAO_INFORMADO - Validate Error Response If
+      response is 201:'
+  - type: request
+    name: Call the GET Payments Endpoint
+    request:
+      method: GET
+      path: /Payments
+  - type: assert
+    name: Expects 200 with a RJCT status, and rejectionReason as DETALHE_PAGAMENTO_INVALIDO
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_excessive-transactionLimit_test-module_v2-1
+  description: Ensure payment cannot be executed if the amount is over the expected
+    transactionLimit
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED", and extract the transactionLimit sent
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call POST consent with the amount as transactionLimit+1
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge
+  - type: request
+    name: Call POST consent authorise, signing the challenge with the compliant private
+      key, and sending the x-bcb-nfc header as false, and sending the userHandle field
+      as an empty string
+  - type: assert
+    name: Expect 204
+  - type: request
+    name: Call POST Pix Payment Endpoint
+  - type: assert
+    name: 'Expect 201 or 422 VALOR_ACIMA_LIMITE - Validate response  If response is
+      201:'
+  - type: request
+    name: Poll GET Payments Endpoint while status is RCVD, ACCP or ACPD
+  - type: request
+    name: Call Get Pix Payment Endpoint
+  - type: assert
+    name: Expect 201 - Validate response and check payment status is RJCT and rejectionReason
+      is VALOR_ACIMA_LIMITE
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_excessive-dailyLimit_test-module_v2-1
+  description: Ensure consequent payments cannot be executed if the amount is over
+    the expected dailyLimits
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED", and extract the transactionLimit and dailyLimit sent
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: 'Execute full payments for today using no redirect flows with the transactionLimit
+      sent, until the dailyLimit is exceed  In the last flow, execute the below:'
+  - type: request
+    name: Call the POST Payments Consents V4 Endpoint, with the amount as with the
+      transactionLimit sent, with the payment.date for today
+  - type: assert
+    name: Expect 201 - Validate Response
+  - type: request
+    name: Call the POST Fido Sign Options Endpoint
+  - type: assert
+    name: Expect 204
+  - type: request
+    name: Call the POST Consent Authorise Endpoint
+  - type: assert
+    name: Expect 204
+  - type: request
+    name: Call POST Pix Payment Endpoint
+  - type: assert
+    name: 'Expect 201 or 422 VALOR_ACIMA_LIMITE - Validate response  If response is
+      201:'
+  - type: request
+    name: Poll GET Payments Endpoint while status is RCVD, ACCP or ACPD
+  - type: request
+    name: Call Get Pix Payment Endpoint
+  - type: assert
+    name: Expect 201 - Validate response and check payment status is RJCT and rejectionReason
+      is VALOR_ACIMA_LIMITE
+  - type: request
+    name: Call the GET Payments Consents Endpoint
+  - type: assert
+    name: Expect 200 - Validate response and ensure status of the consent is CONSUMED
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_excessive-dailyLimit-schd_test-module_v2-1
+  description: Ensure payments are scheduled even if the amount is over the expected
+    dailyLimits
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED", and extract the transactionLimit and dailyLimit sent
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: 'Execute full payments for today using no redirect flows with the transactionLimit
+      sent, until the daily Limit is exceed without sending the debtorAccount field
+      at the POST Consents  In the last flow, execute the below:'
+  - type: request
+    name: Call the POST Payments Consents V4 Endpoint, with the amount as with the
+      transactionLimit sent, with the payment.date 5 daily payments starting at D+1
+  - type: assert
+    name: Expect 201 - Validate Response
+  - type: request
+    name: Call the POST Fido Sign Options Endpoint
+  - type: assert
+    name: Expect 204
+  - type: request
+    name: Call the POST Consent Authorise Endpoint
+  - type: assert
+    name: Expect 204
+  - type: request
+    name: Call POST Pix Payment Endpoint
+  - type: assert
+    name: Expect 201 - Validate Response
+  - type: request
+    name: Poll GET Payments Endpoint while status is RCVD, ACCP or ACPD
+  - type: request
+    name: Call Get Pix Payment {ConsentId}  Endpoint
+  - type: assert
+    name: Expect 201 - Validate response and check all payments status is SCHD
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_multiple-consents-core_test-module_v2-1
+  description: Ensure multiple consents payment reaches an accepted state when a payment
+    without redirect is executed. This test will use the CPF/CNPJ on the config for
+    "Payment consent - XXX - Multiple Consents Test", or Skipped if the field is not
+    filled
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED"
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge
+  - type: request
+    name: Calls the POST Token endpoint with the refresh_token grant, ensuring a token
+      with the nrp-consent scope was issued
+    request:
+      method: POST
+      path: /Token
+  - type: request
+    name: Call POST consent authorize with valid payload, signing the challenge with
+      the compliant private key
+  - type: assert
+    name: Expects 204
+  - type: request
+    name: Call GET Consent
+  - type: assert
+    name: Expects 200 - Validate if status is "PARTIALLY_ACCEPTED"
+  - type: request
+    name: Poll the GET consents endpoint while status is "PARTIALLY_ACCEPTED"
+  - type: request
+    name: Call the GET consents endpoint
+    request:
+      method: GET
+      path: /consents
+  - type: assert
+    name: Expect 200 - Validate Response and ensure status is "AUTHORISED"
+  - type: request
+    name: Calls the POST Payments Endpoint, using the access token with the nrp-consents,
+      authorisationFlow as FIDO_FLOW and consentId with the corresponding ConsentID
+    request:
+      method: POST
+      path: /Payments
+  - type: assert
+    name: Expects 201 - Validate Response
+  - type: request
+    name: Poll the Get Payments endpoint with the PaymentID Created while payment
+      status is RCVD, ACCP or ACPD
+  - type: assert
+    name: Expects Accepted state (ACSC) - Validate Response
+- plan: no-redirect-payments_test-plan_v2-1
+  module: enrollments_api_risk-signals_test-module_v2-1
+  description: Ensure an enrollment request and further consent authorization can
+    happen when all risk signals are sent. This test will require an expirationDateTime
+    to be limited.
+  steps:
+  - type: request
+    name: GET an SSA from the directory and ensure the field software_origin_uris,
+      and extract the first uri from the array
+  - type: request
+    name: Execute a full enrollment journey sending the origin extracted above, extract
+      the enrollment ID, and store the refresh_token generated ensuring it has the
+      nrp-consents scope. At the risk-signals request, send all the risk signals in
+      the payload.
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AUTHORISED", and that the expirationDateTime is sent back.
+    assert:
+      httpStatus: 200
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call POST consent with valid payload
+  - type: assert
+    name: Expects 201 - Validate response
+  - type: request
+    name: Call the POST sign-options endpoint with the consentID created
+    request:
+      method: POST
+      path: /sign-options
+  - type: assert
+    name: Expect 201 - Validate response and extract challenge
+  - type: request
+    name: Calls the POST Token endpoint with the refresh_token grant, ensuring a token
+      with the nrp-consent scope was issued
+    request:
+      method: POST
+      path: /Token
+  - type: request
+    name: Call POST consent authorize with valid payload, signing the challenge with
+      the compliant private key, sending the x-bcb-nfc header as true, and sending
+      all the risk signals, as sent at the POST risk signal request
+  - type: assert
+    name: Expects 204 or 422 RISCO - Validate Response
+- plan: no-redirect-payments-webhook_test-plan_v2-1
+  module: enrollments_api_webhook-rejected_test-module_v2-1
+  description: Ensure that the tested institution has correctly implemented the webhook
+    notification endpoint and that this endpoint is correctly called when an enrollment
+    is rejected. For this test the institution will need to register on it’s software
+    statement a webhook under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the Registration Endpoint, also sending the field "webhook_uris":[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>”]
+  - type: assert
+    name: Expect a 201 - Validate Response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Set the enrollments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>/open-banking/enrollments/v2/enrollments/{enrollmentId},
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Call the PATCH enrollments endpoint
+    request:
+      method: PATCH
+      path: /enrollments
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: assert
+    name: Expect an incoming message for enrollments, which must be mtls protected
+      - Wait 60 seconds for both messages to be returned
+  - type: assert
+    name: Return a 202 - Validate the contents of the incoming message, including
+      the presence of the x-webhook-interaction-id header and that the timestamp value
+      is within now and the start of the test
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REJECTED", cancelledFrom is INICIADORA and rejectionReason is REJEITADO_MANUALMENTE
+    assert:
+      httpStatus: 200
+      body:
+        status: REJECTED
+- plan: no-redirect-payments-webhook_test-plan_v2-1
+  module: enrollments_api_webhook-revoked_test-module_v2-1
+  description: Ensure that the tested institution has correctly implemented the webhook
+    notification endpoint and that this endpoint is correctly called when a enrollment
+    is revoked.  For this test the institution will need to register on it’s software
+    statement a webhook under the following format - https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>
+  steps:
+  - type: request
+    name: Obtain a SSA from the Directory
+  - type: request
+    name: Ensure that on the SSA the attribute software_api_webhook_uris contains
+      the URI https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>,
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Ensure the field software_origin_uris is present in the SSA and extract
+      the first uri from the array
+  - type: request
+    name: Call the Registration Endpoint, also sending the field "webhook_uris":[“https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>”]
+  - type: assert
+    name: Expect a 201 - Validate Response
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Set the test to wait for X seconds, where X is the time in seconds provided
+      on the test configuration for the attribute webhookWaitTime. If no time is provided,
+      X is defaulted to 600 seconds
+  - type: request
+    name: Set the enrollments webhook notification endpoint to be equal to https://web.conformance.directory.openbankingbrasil.org.br/test-mtls/a/<alias>/open-banking/enrollments/v2/enrollments/{enrollmentId},
+      where the alias is to be obtained from the field alias on the test configuration
+  - type: request
+    name: Call the POST enrollments endpoint
+    request:
+      method: POST
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AWAITING_RISK_SIGNALS"
+    assert:
+      httpStatus: 201
+      body:
+        status: AWAITING_RISK_SIGNALS
+  - type: request
+    name: Call the POST Risk Signals endpoint sending the appropriate signals
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      AWAITING_ACCOUNT_HOLDER_VALIDATION
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ACCOUNT_HOLDER_VALIDATION
+  - type: request
+    name: Redirect the user to authorize the enrollment
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "AWAITING_ENROLLMENT"
+    assert:
+      httpStatus: 200
+      body:
+        status: AWAITING_ENROLLMENT
+  - type: request
+    name: Call the POST fido-registration-options endpoint
+    request:
+      method: POST
+      path: /fido-registration-options
+  - type: assert
+    name: Expect a 201 response - Validate the response and extract the challenge
+    assert:
+      httpStatus: 201
+  - type: request
+    name: Create the FIDO Credentials and create the attestationObject
+  - type: request
+    name: Call the POST fido-registration endpoint, sending the compliant attestationObject,
+      with the origin extracted on the SSA at the ClientDataJson.origin
+    request:
+      method: POST
+      path: /fido-registration
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 201 response - Validate the response and check if the status is
+      "AUTHORISED"
+    assert:
+      httpStatus: 201
+      body:
+        status: AUTHORISED
+  - type: request
+    name: Call the PATCH enrollments endpoint
+    request:
+      method: PATCH
+      path: /enrollments
+  - type: assert
+    name: Expect a 204 response
+    assert:
+      httpStatus: 204
+  - type: assert
+    name: Expect an incoming message for enrollments, which must be mtls protected
+      - Wait 60 seconds for both messages to be returned
+  - type: assert
+    name: Return a 202 - Validate the contents of the incoming message, including
+      the presence of the x-webhook-interaction-id header and that the timestamp value
+      is within now and the start of the test
+  - type: request
+    name: Call the GET enrollments endpoint
+    request:
+      method: GET
+      path: /enrollments
+  - type: assert
+    name: Expect a 200 response - Validate the response and check if the status is
+      "REVOKED", cancelledFrom is INICIADORA and revocationReason is REVOGADO_MANUALMENTE
+    assert:
+      httpStatus: 200
+      body:
+        status: REVOKED
